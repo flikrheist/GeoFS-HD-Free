@@ -16,6 +16,17 @@ const USER_AGENT: &str =
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0";
 
 const CACHE_DIR: &str = "cache";
+const SERVERS: [&str; 9] = [
+    "https://www.google.com/maps/vt/lyrs=s&x={x}&y={y}&z={z}",
+    "https://mt0.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+    "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+    "https://mt2.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+    "https://mt3.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+    "https://khms0.google.com/kh/v=968?x={x}&y={y}&z={z}",
+    "https://khms1.google.com/kh/v=968?x={x}&y={y}&z={z}",
+    "https://khms2.google.com/kh/v=968?x={x}&y={y}&z={z}",
+    "https://khms3.google.com/kh/v=968?x={x}&y={y}&z={z}",
+];
 
 #[tokio::main]
 async fn main() {
@@ -58,20 +69,28 @@ async fn get_tile(Path((z, x, y)): Path<(u8, u32, u32)>) -> impl axum::response:
     let img: Vec<u8>;
 
     // check if cache exists
-    let cache_path = format!("{}/{}_{}_{}.jpg", CACHE_DIR, z, x, y);
-    if fs::metadata(&cache_path).is_ok() {
+    let cache_path = format!("{}/{}/{}/{}.jpg", CACHE_DIR, z, x, y);
+    if tokio::fs::metadata(&cache_path).await.is_ok() {
         println!("Cache hit: {}", cache_path);
-        img = fs::read(cache_path).unwrap();
+        img = tokio::fs::read(cache_path).await.unwrap();
     } else {
         println!("Cache miss: {}", cache_path);
-        let url = format!(
-            "https://mt0.google.com/vt/lyrs=s&x={}&y={}&z={}",
-            x, y, z
-        );
 
         let client = reqwest::Client::new();
         let mut attempt: u8 = 0;
         loop {
+            let server: String = SERVERS[(std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_micros() as u64
+                % SERVERS.len() as u64) as usize]
+                .to_string();
+            
+            let url = server
+                .replace("{x}", &x.to_string())
+                .replace("{y}", &y.to_string())
+                .replace("{z}", &z.to_string());
+
             let res = client
                 .get(&url)
                 .header("User-Agent", USER_AGENT)
@@ -112,14 +131,22 @@ async fn get_tile(Path((z, x, y)): Path<(u8, u32, u32)>) -> impl axum::response:
             }
         }
 
-        // save to cache
-        fs::write(cache_path, &img).unwrap();
+        // save to cache async (dont wait for it to finish)
+        let img = img.clone();
+        tokio::spawn(async move {
+            let dir = format!("{}/{}/{}", CACHE_DIR, z, x);
+            if tokio::fs::metadata(&dir).await.is_err() {
+                tokio::fs::create_dir_all(&dir).await.unwrap();
+            }
+
+            let path = format!("{}/{}.jpg", dir, y);
+            tokio::fs::write(path, img).await.unwrap();
+        });
     }
 
     let mut headers = HeaderMap::new();
     headers.insert(header::CONTENT_TYPE, "image/jpeg".parse().unwrap());
     headers.insert(header::CACHE_CONTROL, "max-age=31536000".parse().unwrap());
-
 
     (StatusCode::OK, headers, img)
 }

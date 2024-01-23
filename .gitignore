@@ -14,4 +14,4 @@ Cargo.lock
 *.pdb
 
 # Cache files
-cache/*.jpg
+cache/*/*/*.jpg

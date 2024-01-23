@@ -22,20 +22,27 @@
         //    key: "AjrgR5TNicgFReuFwvNH71v4YeQNkXIB20l63ZMm86mVuBGZPhTHMkdiVq2_9L7x",
         //    mapStyle: window.Cesium.BingMapsStyle.AERIAL
         //});
-        //url: "http://localhost/map/{z}/{x}/{y}.jpg"
+
         //window.geofs.api.imageryProvider = new window.Cesium.UrlTemplateImageryProvider({
         //    maximumLevel: 21,
-        //    customTags : {
-        //        server: function(imageryProvider, x, y, level) {
-        //            return mapsServers[Math.floor(Math.random() * mapsServers.length)];
-        //        }
-        //    },
-        //    url: "https://{server}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+        //    hasAlphaChannel: false,
+        //    subdomains: ["mt0", "mt1", "mt2", "mt3"],
+        //    url: "https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
         //});
+
+        // window.geofs.api.imageryProvider = new window.Cesium.UrlTemplateImageryProvider({
+        //    maximumLevel: 21,
+        //    hasAlphaChannel: false,
+        //    subdomains: ["sat-cdn1", "sat-cdn2", "sat-cdn3", "sat-cdn4"],
+        //    url: "https://{s}.apple-mapkit.com/tile?style=7&size=1&scale=1&z={z}&x={x}&y={y}&v=9651&accessKey=1705988638_4603104305979553294_%2F_Qvq1XXyXG5w0IUYlFOsIQsxLt2ALxm32i%2BAMbLIFD5s%3D"
+        // });
+
         window.geofs.api.imageryProvider = new window.Cesium.UrlTemplateImageryProvider({
             maximumLevel: 21,
+            hasAlphaChannel: false,
             url: "http://localhost/map/{z}/{x}/{y}"
         });
+
         window.geofs.api.setImageryProvider(window.geofs.api.imageryProvider, false);
         window.geofs.api.viewer.terrainProvider = window.geofs.api.flatRunwayTerrainProviderInstance = new window.geofs.api.FlatRunwayTerrainProvider({
             baseProvider: new window.Cesium.CesiumTerrainProvider({
