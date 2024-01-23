@@ -1,0 +1,20 @@
+[package]
+name = "geofs_cache"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+axum = "0.7.4"
+reqwest = "0.11.23"
+tokio = { version = "1.35.1", features = ["rt-multi-thread", "macros"] }
+tower = "0.4.13"
+tower-http = { version = "0.5.1", features = ["cors"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+debug = false
+panic = "abort"
