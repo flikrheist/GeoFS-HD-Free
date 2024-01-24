@@ -40,7 +40,7 @@
         window.geofs.api.imageryProvider = new window.Cesium.UrlTemplateImageryProvider({
             maximumLevel: 21,
             hasAlphaChannel: false,
-            url: "http://localhost/map/{z}/{x}/{y}"
+            url: "http://{s}.localhost/map/{z}/{x}/{y}"
         });
 
         window.geofs.api.setImageryProvider(window.geofs.api.imageryProvider, false);

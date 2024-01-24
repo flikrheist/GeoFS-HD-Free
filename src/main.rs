@@ -9,7 +9,7 @@ use std::fs;
 use tower::ServiceBuilder;
 use tower_http::cors::{Any, CorsLayer};
 
-const PORT: i16 = 80;
+const PORT: u16 = 80;
 const HOST: &str = "0.0.0.0";
 
 const USER_AGENT: &str =
@@ -54,6 +54,8 @@ async fn main() {
     let listener = tokio::net::TcpListener::bind(format!("{}:{}", HOST, PORT))
         .await
         .unwrap();
+
+    // run the server
     println!("Listening on port {}", PORT);
     axum::serve(listener, app).await.unwrap();
 }
