@@ -30,7 +30,7 @@ const SERVERS: [&str; 9] = [
 
 #[tokio::main]
 async fn main() {
-    // create caceh dir if it doesnt exist
+    // create cache dir if it doesn't exist
     fs::create_dir_all(CACHE_DIR).unwrap();
 
     let cors = CorsLayer::new()
@@ -45,8 +45,6 @@ async fn main() {
         .route("/", get(root))
         // `POST /users` goes to `create_user`
         .route("/map/:z/:x/:y", get(get_tile))
-        // Create state
-        .with_state(())
         // Create middleware
         .layer(ServiceBuilder::new().layer(cors));
 
@@ -73,21 +71,20 @@ async fn get_tile(Path((z, x, y)): Path<(u8, u32, u32)>) -> impl axum::response:
     // check if cache exists
     let cache_path = format!("{}/{}/{}/{}.jpg", CACHE_DIR, z, x, y);
     if tokio::fs::metadata(&cache_path).await.is_ok() {
-        println!("Cache hit: {}", cache_path);
+        println!("Cache hit: {cache_path}");
         img = tokio::fs::read(cache_path).await.unwrap();
     } else {
-        println!("Cache miss: {}", cache_path);
+        println!("Cache miss: {cache_path}");
 
         let client = reqwest::Client::new();
         let mut attempt: u8 = 0;
         loop {
-            let server: String = SERVERS[(std::time::SystemTime::now()
+            let server = SERVERS[(std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
                 .as_micros() as u64
-                % SERVERS.len() as u64) as usize]
-                .to_string();
-            
+                % SERVERS.len() as u64) as usize];
+
             let url = server
                 .replace("{x}", &x.to_string())
                 .replace("{y}", &y.to_string())
@@ -107,7 +104,7 @@ async fn get_tile(Path((z, x, y)): Path<(u8, u32, u32)>) -> impl axum::response:
                         break;
                     } else {
                         attempt += 1;
-                        if attempt >= 3 {
+                        if attempt >= 3 || response.status() == 404 {
                             let mut headers = HeaderMap::new();
                             headers.insert(header::CONTENT_TYPE, "text/plain".parse().unwrap());
                             return (
@@ -136,7 +133,7 @@ async fn get_tile(Path((z, x, y)): Path<(u8, u32, u32)>) -> impl axum::response:
         // save to cache async (dont wait for it to finish)
         let img = img.clone();
         tokio::spawn(async move {
-            let dir = format!("{}/{}/{}", CACHE_DIR, z, x);
+            let dir: String = format!("{}/{}/{}", CACHE_DIR, z, x);
             if tokio::fs::metadata(&dir).await.is_err() {
                 tokio::fs::create_dir_all(&dir).await.unwrap();
             }

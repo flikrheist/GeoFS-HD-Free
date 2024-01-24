@@ -12,8 +12,6 @@
 (function() {
     "use strict";
 
-    const mapsServers = ["mt0", "mt1", "mt2", "mt3"];
-
     window.geofsNewHDState = true;
     window.geofs.geoIpUpdate = function() {
         document.body.classList.add("geofs-hd");
