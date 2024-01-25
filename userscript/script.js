@@ -24,6 +24,7 @@
                 window.geofs.api.imageryProvider = new window.Cesium.UrlTemplateImageryProvider({
                     maximumLevel: 21,
                     hasAlphaChannel: false,
+                    subdomains: "abcdefghijklmnopqrstuvwxyz".split(""),
                     url: "http://localhost/map/{z}/{x}/{y}"
                 });
                 break;
