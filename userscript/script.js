@@ -23,7 +23,7 @@
                 window.geofs.api.imageryProvider = new window.Cesium.UrlTemplateImageryProvider({
                     maximumLevel: 21,
                     hasAlphaChannel: false,
-                    url: "https://data.geo-fs.com/map/{z}/{x}/{y}"
+                    url: "http://localhost/map/{z}/{x}/{y}"
                 });
                 break;
             case "google":
