@@ -2,8 +2,8 @@
 // @name         Better Resolution Terrain
 // @namespace    http://tampermonkey.net/
 // @version      2024-01-21
-// @description  Gets higher resolution images
-// @author       You
+// @description  Gets higher resolution images and blocks ads
+// @author       drakeerv
 // @match        https://www.geo-fs.com/geofs.php?v=*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=geo-fs.com
 // @grant        none
@@ -12,7 +12,7 @@
 (function() {
     "use strict";
 
-    const provider = "cache";
+    const provider = "google";
 
     window.geofsNewHDState = true;
     window.geofs.geoIpUpdate = function() {
