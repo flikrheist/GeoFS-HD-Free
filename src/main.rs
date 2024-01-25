@@ -1,3 +1,4 @@
+use axum::extract::{FromRef, State};
 use axum::http::Method;
 use axum::{
     extract::Path,
@@ -5,7 +6,6 @@ use axum::{
     routing::get,
     Router,
 };
-use std::fs;
 use tower::ServiceBuilder;
 use tower_http::cors::{Any, CorsLayer};
 
@@ -15,7 +15,7 @@ const HOST: &str = "0.0.0.0";
 const USER_AGENT: &str =
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0";
 
-const CACHE_DIR: &str = "cache";
+const CACHE_DB: &str = "cache";
 const SERVERS: [&str; 9] = [
     "https://www.google.com/maps/vt/lyrs=s&x={x}&y={y}&z={z}",
     "https://mt0.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
@@ -28,16 +28,43 @@ const SERVERS: [&str; 9] = [
     "https://khms3.google.com/kh/v=968?x={x}&y={y}&z={z}",
 ];
 
+#[derive(Clone)]
+struct AppState {
+    db: sled::Db,
+    client: reqwest::Client,
+}
+
+impl FromRef<AppState> for reqwest::Client {
+    fn from_ref(app_state: &AppState) -> reqwest::Client {
+        app_state.client.clone()
+    }
+}
+
 #[tokio::main]
 async fn main() {
-    // create cache dir if it doesn't exist
-    fs::create_dir_all(CACHE_DIR).unwrap();
-
     let cors = CorsLayer::new()
         // allow `GET` and `POST` when accessing the resource
         .allow_methods([Method::GET])
         // allow requests from any origin
         .allow_origin(Any);
+
+    // create our db
+    let db_options = sled::Config::default()
+        .path(CACHE_DB)
+        .mode(sled::Mode::HighThroughput)
+        .cache_capacity(1024 * 1024 * 1024)
+        .flush_every_ms(Some(1000))
+        .use_compression(true);
+    let db = db_options.open().unwrap();
+
+    // create our client
+    let client = reqwest::Client::new();
+
+    // create our application state
+    let state = AppState {
+        db: db.clone(),
+        client,
+    };
 
     // build our application with a route
     let app = Router::new()
@@ -45,7 +72,9 @@ async fn main() {
         .route("/", get(root))
         // `POST /users` goes to `create_user`
         .route("/map/:z/:x/:y", get(get_tile))
-        // Create middleware
+        // create a state that holds our database
+        .with_state(state)
+        // create middleware
         .layer(ServiceBuilder::new().layer(cors));
 
     // run our app with hyper, listening globally on port 3000
@@ -55,7 +84,18 @@ async fn main() {
 
     // run the server
     println!("Listening on port {}", PORT);
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app)
+        .with_graceful_shutdown(async {
+            tokio::signal::ctrl_c()
+                .await
+                .expect("failed to install CTRL+C signal handler");
+        })
+        .await
+        .unwrap();
+
+    // close the db
+    db.flush().unwrap();
+    println!("DB new size is {} with {} entries", db.size_on_disk().unwrap(), db.len());
 }
 
 // basic handler that responds with a static string
@@ -64,19 +104,18 @@ async fn root() -> &'static str {
 }
 
 // get a tile and cache it if it is not alread, else send the image
-async fn get_tile(Path((z, x, y)): Path<(u8, u32, u32)>) -> impl axum::response::IntoResponse {
+async fn get_tile(
+    Path((z, x, y)): Path<(u8, u32, u32)>,
+    State(state): State<AppState>,
+) -> impl axum::response::IntoResponse {
     // create image
     let img: Vec<u8>;
 
     // check if cache exists
-    let cache_path = format!("{}/{}/{}/{}.jpg", CACHE_DIR, z, x, y);
-    if tokio::fs::metadata(&cache_path).await.is_ok() {
-        println!("Cache hit: {cache_path}");
-        img = tokio::fs::read(cache_path).await.unwrap();
+    let path = format!("{}/{}/{}", z, x, y);
+    if let Ok(Some(bytes)) = state.db.get(&path) {
+        img = bytes.to_vec();
     } else {
-        println!("Cache miss: {cache_path}");
-
-        let client = reqwest::Client::new();
         let mut attempt: u8 = 0;
         loop {
             let server = SERVERS[(std::time::SystemTime::now()
@@ -90,7 +129,8 @@ async fn get_tile(Path((z, x, y)): Path<(u8, u32, u32)>) -> impl axum::response:
                 .replace("{y}", &y.to_string())
                 .replace("{z}", &z.to_string());
 
-            let res = client
+            let res = state
+                .client
                 .get(&url)
                 .header("User-Agent", USER_AGENT)
                 .send()
@@ -133,13 +173,7 @@ async fn get_tile(Path((z, x, y)): Path<(u8, u32, u32)>) -> impl axum::response:
         // save to cache async (dont wait for it to finish)
         let img = img.clone();
         tokio::spawn(async move {
-            let dir: String = format!("{}/{}/{}", CACHE_DIR, z, x);
-            if tokio::fs::metadata(&dir).await.is_err() {
-                tokio::fs::create_dir_all(&dir).await.unwrap();
-            }
-
-            let path = format!("{}/{}.jpg", dir, y);
-            tokio::fs::write(path, img).await.unwrap();
+            state.db.insert(&path, img).unwrap();
         });
     }
 
