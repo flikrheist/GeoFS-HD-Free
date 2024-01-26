@@ -94,6 +94,7 @@ async fn main() {
         .unwrap();
 
     // close the db
+    println!("Closing DB");
     db.flush().unwrap();
     let size = db.size_on_disk().unwrap() as f64 / 1024.0 / 1024.0;
     println!("DB new size is {:.2} MB with {} entries", size, db.len());
