@@ -7,7 +7,7 @@ use axum::{
     Router,
 };
 use tower::ServiceBuilder;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::{services::ServeDir, cors::{Any, CorsLayer}};
 
 const PORT: u16 = 80;
 const HOST: &str = "0.0.0.0";
@@ -68,12 +68,10 @@ async fn main() {
 
     // build our application with a route
     let app = Router::new()
-        // `GET /` goes to `root`
-        .route("/", get(root))
         // `GET /users` goes to `create_user`
         .route("/map/:z/:x/:y", get(get_tile))
-        // `GET /favicon.ico` goes to `favicon.ico`
-        .route("/favicon.ico", get(favicon))
+        // add static files
+        .nest_service("/", ServeDir::new("./static"))
         // create a state that holds our database
         .with_state(state)
         // create middleware
@@ -102,16 +100,15 @@ async fn main() {
     println!("DB new size is {:.2} MB with {} entries", size, db.len());
 }
 
-// basic handler that responds with a static string
-async fn root() -> &'static str {
-    "GeoFS Cache Server"
-}
-
 // get a tile and cache it if it is not alread, else send the image
 async fn get_tile(
-    Path((z, x, y)): Path<(u8, u32, u32)>,
+    Path((z, x, y)): Path<(u8, i32, u32)>,
     State(state): State<AppState>,
 ) -> impl axum::response::IntoResponse {
+    // calculate the x
+    let size = 2_i32.pow(z as u32) as u32;
+    let x = x.rem_euclid(size as i32);
+
     // create image
     let img: Vec<u8>;
 
@@ -183,16 +180,6 @@ async fn get_tile(
 
     let mut headers = HeaderMap::new();
     headers.insert(header::CONTENT_TYPE, "image/jpeg".parse().unwrap());
-    headers.insert(header::CACHE_CONTROL, "max-age=31536000".parse().unwrap());
-
-    (StatusCode::OK, headers, img)
-}
-
-async fn favicon() -> impl axum::response::IntoResponse {
-    let img = include_bytes!("favicon.ico").to_vec();
-
-    let mut headers = HeaderMap::new();
-    headers.insert(header::CONTENT_TYPE, "image/x-icon".parse().unwrap());
     headers.insert(header::CACHE_CONTROL, "max-age=31536000".parse().unwrap());
 
     (StatusCode::OK, headers, img)
