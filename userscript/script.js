@@ -13,11 +13,17 @@
 (function() {
     "use strict";
 
-    const provider = "google";
+    const provider = "cache";
+    const multiplayerServer = "default"
 
     window.geofsNewHDState = true;
     window.geofs.geoIpUpdate = function() {
+        delete window.geofs.api.analytics;
         document.body.classList.add("geofs-hd");
+
+        if (multiplayerServer !== "default") {
+            window.geofs.multiplayerHost = multiplayerServer;
+        }
 
         switch (provider) {
             case "cache":
