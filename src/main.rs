@@ -43,7 +43,7 @@ impl FromRef<AppState> for reqwest::Client {
 #[tokio::main]
 async fn main() {
     let cors = CorsLayer::new()
-        // allow `GET` and `POST` when accessing the resource
+        // allow `GET` when accessing the resource
         .allow_methods([Method::GET])
         // allow requests from any origin
         .allow_origin(Any);
