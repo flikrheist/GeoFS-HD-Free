@@ -13,7 +13,7 @@
 (function() {
     "use strict";
 
-    const provider = "cache";
+    const provider = "google";
     const multiplayerServer = "default"
 
     window.geofsNewHDState = true;
