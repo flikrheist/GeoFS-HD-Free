@@ -83,5 +83,5 @@
         window.geofs.mapXYZ = "https://data.geo-fs.com/osm/{z}/{x}/{y}.png";
     });
 
-    document.querySelectorAll("body > div.geofs-adbanner.geofs-adsense-container")[0].remove();
+    //document.querySelectorAll("body > div.geofs-adbanner.geofs-adsense-container")[0].remove();
 })();
