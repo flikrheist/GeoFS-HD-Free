@@ -18,7 +18,7 @@
 Bonus Tip: Enable an ad-blocker to disable ads as well!
 
 -----------------------------------------------------------------------
-## Code
+## Script
 
     const provider = "google";
     const multiplayerServer = "default"
