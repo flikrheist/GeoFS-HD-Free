@@ -7,11 +7,12 @@
  /userscript/script.js OR copy the text below the instructions.
 2. Go to geofs.com via the address or Shadow proxy.
 3. Press Ctrl+Shift+I to open the inspector.
-4. Type "allow pasting" in the editor.
-5. Press Enter.
-6. Press Ctrl+V to paste the script.
-7. Press Enter again.
-8. Enjoy GeoFS **free** High Definition!!
+4. Spam click the cancel error button until all the errors disappear.
+5. Type "allow pasting" in the editor.
+6. Press Enter.
+7. Press Ctrl+V to paste the script.
+8. Press Enter again.
+9. Enjoy GeoFS **free** High Definition!!
 
 Bonus Tip: Enable an ad-blocker to disable ads as well!
 
