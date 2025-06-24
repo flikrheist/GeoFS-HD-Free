@@ -18,21 +18,6 @@ Bonus Tip: Enable an ad-blocker to disable ads as well!
 -----------------------------------------------------------------------
 ## Code
 
-// ==UserScript==
-// @name         Better Resolution Terrain
-// @namespace    http://tampermonkey.net/
-// @version      2024-01-21
-// @description  Gets higher resolution images and blocks ads
-// @author       drakeerv
-// @match        https://www.geo-fs.com/geofs.php?v=*
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=geo-fs.com
-// @grant        none
-// @license      MIT
-// ==/UserScript==
-
-(function() {
-    "use strict";
-
     const provider = "google";
     const multiplayerServer = "default"
 
@@ -104,7 +89,7 @@ Bonus Tip: Enable an ad-blocker to disable ads as well!
     });
 
     //document.querySelectorAll("body > div.geofs-adbanner.geofs-adsense-container")[0].remove();
-})();
+
 -----------------------------------------------------------------------------------------------------------------
 
 Updated for GeoFS 2025 by flikrheist
